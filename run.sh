@@ -1,0 +1,1 @@
+npx http-server ./www/ -o -c-1 -p 3000
