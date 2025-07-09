@@ -54,6 +54,16 @@ impl Pixel {
             behaviour: PixelBehaviour::Powder
         }
     }
+
+    pub fn water() -> Pixel {
+        let col_c = (js_sys::Math::random() * 15.0) as u8 - 10;
+        Pixel {
+            r: 0,
+            g: 100+col_c,
+            b: 200+col_c,
+            behaviour: PixelBehaviour::Liquid
+        }
+    }
 }
 
 #[wasm_bindgen]
@@ -134,6 +144,10 @@ impl World {
     }
 
     pub fn set_pixel(&mut self, x: usize, y: usize, pixel: Pixel) {
+        // if x >= self.width || y >= self.width {
+        //     return;
+        // }
+
         let index = self.get_index(x, y);
         self.pixels[index] = pixel;
     }
@@ -210,6 +224,75 @@ impl World {
                         }
                     }
                 },
+                PixelBehaviour::Liquid => {
+                    let maybe_bottom = self.index_get_pixel_offset(index, 0, 1);
+                    if let Some(bottom) = maybe_bottom {
+                        if bottom.behaviour == PixelBehaviour::Dead {
+                            self.index_set_pixel_offset(index, 0, 1, self.pixels[index]);
+                            self.pixels[index] = Pixel::empty();
+                            continue;
+                        }
+                    }
+
+                    match fastrand::bool() {
+                        false => {
+                            let maybe_bottom_right = self.index_get_pixel_offset(index, 1, 1);
+                            if let Some(bottom_right) = maybe_bottom_right {
+                                if bottom_right.behaviour == PixelBehaviour::Dead {
+                                    self.index_set_pixel_offset(index, 1, 1, self.pixels[index]);
+                                    self.pixels[index] = Pixel::empty();
+                                    continue;
+                                }
+                            }
+
+                            let maybe_bottom_left = self.index_get_pixel_offset(index, -1, 1);
+                            if let Some(bottom_left) = maybe_bottom_left {
+                                if bottom_left.behaviour == PixelBehaviour::Dead {
+                                    self.index_set_pixel_offset(index, -1, 1, self.pixels[index]);
+                                    self.pixels[index] = Pixel::empty();
+                                    continue;
+                                }
+                            }
+
+                            let maybe_right = self.index_get_pixel_offset(index, 1, 0);
+                            if let Some(right) = maybe_right {
+                                if right.behaviour == PixelBehaviour::Dead {
+                                    self.index_set_pixel_offset(index, 1, 0, self.pixels[index]);
+                                    self.pixels[index] = Pixel::empty();
+                                    continue;
+                                }
+                            }
+
+                            let maybe_left = self.index_get_pixel_offset(index, -1, 0);
+                            if let Some(left) = maybe_left {
+                                if left.behaviour == PixelBehaviour::Dead {
+                                    self.index_set_pixel_offset(index, -1, 0, self.pixels[index]);
+                                    self.pixels[index] = Pixel::empty();
+                                    continue;
+                                }
+                            }
+                        },
+                        true => {
+                            let maybe_bottom_left = self.index_get_pixel_offset(index, -1, 1);
+                            if let Some(bottom_left) = maybe_bottom_left {
+                                if bottom_left.behaviour == PixelBehaviour::Dead {
+                                    self.index_set_pixel_offset(index, -1, 1, self.pixels[index]);
+                                    self.pixels[index] = Pixel::empty();
+                                    continue;
+                                }
+                            }
+
+                            let maybe_bottom_right = self.index_get_pixel_offset(index, 1, 1);
+                            if let Some(bottom_right) = maybe_bottom_right {
+                                if bottom_right.behaviour == PixelBehaviour::Dead {
+                                    self.index_set_pixel_offset(index, 1, 1, self.pixels[index]);
+                                    self.pixels[index] = Pixel::empty();
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+                }
                 _ => { }
             }
         }

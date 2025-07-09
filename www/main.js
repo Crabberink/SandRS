@@ -31,19 +31,49 @@ canvas.addEventListener('mousemove', function(evt) {
     mousePos = getMousePos(canvas, evt);
 }, false);
 
-var mousePressed = false;
+var mouseButtons = 0;
 canvas.addEventListener('mousedown', function(evt) {
-    mousePressed = true;
+    mouseButtons = evt.buttons;
 });
 canvas.addEventListener('mouseup', function(evt) {
-    mousePressed = false;
+    mouseButtons = 0;
 });
 canvas.addEventListener('mouseleave', function(evt) {
-    mousePressed = false;
+    mouseButtons = 0;
 });
+
+document.addEventListener('keydown', function(e) {
+    console.log(e.code);
+    if (e.code == "KeyX") { placeType = 0; }
+    if (e.code == "Digit1") { placeType = 1; }
+    if (e.code == "Digit2") { placeType = 2; }
+});
+
+let placeType = 0;
+
+
+function isMousePressed(button) {
+    let mask = 1 << button;
+    return mouseButtons & mask > 0;
+}
 
 
 let lastTime;
+
+let size = 100;
+
+function getPixelToPlace() {
+    switch (placeType) {
+        case 0:
+            return Pixel.empty();
+        case 1:
+            return Pixel.sand();
+        case 2:
+            return Pixel.water();
+        default:
+            return Pixel.empty();
+    }
+}
 
 function renderFrame(timeStamp) {
     if(lastTime == undefined) {
@@ -55,10 +85,11 @@ function renderFrame(timeStamp) {
 
     let start = performance.now()
 
-    if (mousePressed) {
-        for (let ox = -2; ox < 2; ox++) {
-            for (let oy = -2; oy < 2; oy++) {
-                world.set_pixel(mousePos.x + ox, mousePos.y + oy, Pixel.empty());
+    if (isMousePressed(0)) {
+        for (let ox = -size; ox < size; ox++) {
+            for (let oy = -size; oy < size; oy++) {
+                if (mousePos.x + ox < 0 || mousePos.x + ox >= width || mousePos.y + oy < 0 || mousePos.y + oy >= height) { continue; }
+                world.set_pixel(mousePos.x + ox, mousePos.y + oy, getPixelToPlace());
             }
         }
     }
@@ -71,6 +102,7 @@ function renderFrame(timeStamp) {
     let end = performance.now();
 
     console.log(`Ran in ${end-start}`);
+
 
     requestAnimationFrame(renderFrame);
 }
